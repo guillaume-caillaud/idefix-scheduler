@@ -1,0 +1,172 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Mockup Admin</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <div class="topbar-inner">
+        <div class="brand">Team Scheduler - Administration</div>
+        <nav class="nav">
+          <a href="index.html">Accueil</a>
+          <a class="active" href="admin.html">Admin</a>
+          <a href="manager.html">Manager</a>
+          <a href="employee.html">Employe</a>
+        </nav>
+      </div>
+    </header>
+
+    <main class="wrap">
+      <section class="grid">
+        <div class="kpis">
+          <div class="kpi"><div class="n">62</div><div class="l">Comptes total</div></div>
+          <div class="kpi"><div class="n">7</div><div class="l">Pending a valider</div></div>
+          <div class="kpi"><div class="n">14</div><div class="l">Managers actifs</div></div>
+          <div class="kpi"><div class="n">39</div><div class="l">Employes actifs</div></div>
+        </div>
+
+        <article class="card col-12">
+          <h2 style="margin-top:0;">📅 Jour par défaut pour la planification</h2>
+          <p style="color:var(--muted);font-size:13px;margin-bottom:12px;">
+            Definissez le jour qui s'affichera par defaut pour tous les employes et managers au chargement de leur planning.
+          </p>
+          <div style="display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap;">
+            <div>
+              <label style="font-size:12px;color:var(--muted);display:block;margin-bottom:4px;">Date</label>
+              <input type="date" value="2026-04-01" style="padding:8px;border:1px solid var(--line);border-radius:8px;font-size:14px;" />
+            </div>
+            <button class="btn btn-main">Enregistrer</button>
+            <span style="color:#0a0;font-size:13px;">✅ Enregistre</span>
+          </div>
+        </article>
+
+        <article class="card col-12">
+          <h2 style="margin-top:0;">🏷️ Nom de l'application</h2>
+          <p style="color:var(--muted);font-size:13px;margin-bottom:12px;">
+            Configurez le nom de l'application affiche dans la barre de navigation et le titre de la page.
+          </p>
+          <div style="display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap;">
+            <div style="flex:1;min-width:220px;">
+              <label style="font-size:12px;color:var(--muted);display:block;margin-bottom:4px;">Nom</label>
+              <input type="text" value="Team Scheduler" style="width:100%;padding:8px;border:1px solid var(--line);border-radius:8px;font-size:14px;" placeholder="Team Scheduler" />
+            </div>
+            <button class="btn btn-main">Enregistrer</button>
+            <span style="color:#0a0;font-size:13px;">✅ Enregistre</span>
+          </div>
+        </article>
+
+        <article class="card col-8">
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;">
+            <h2 style="margin:0;">Gestion des utilisateurs</h2>
+            <div class="actions">
+              <button class="btn btn-main">Tous</button>
+              <button class="btn btn-soft">Pending</button>
+              <button class="btn btn-soft">Employes</button>
+              <button class="btn btn-soft">Managers</button>
+            </div>
+          </div>
+
+          <table class="table" style="margin-top:10px;">
+            <thead>
+              <tr>
+                <th>Nom</th>
+                <th>Telegram</th>
+                <th>Role</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Alice Morel</td>
+                <td>@alice_m</td>
+                <td><span class="badge pending">Pending</span></td>
+                <td class="actions"><button class="btn btn-alt">Valider Employe</button><button class="btn btn-soft">Valider Manager</button></td>
+              </tr>
+              <tr>
+                <td>Yanis Paul</td>
+                <td>@yanis_p</td>
+                <td><span class="badge employee">Employe</span></td>
+                <td class="actions"><button class="btn btn-soft">Passer Manager</button></td>
+              </tr>
+              <tr>
+                <td>Lea Durand</td>
+                <td>@lea_d</td>
+                <td><span class="badge manager">Manager</span></td>
+                <td class="actions"><button class="btn btn-soft">Passer Employe</button></td>
+              </tr>
+            </tbody>
+          </table>
+        </article>
+
+        <article class="card col-4">
+          <h2 style="margin-top:0;">📢 Alerte globale</h2>
+          <p style="color:var(--muted);font-size:13px;line-height:1.5;">
+            Envoi d'une notification a tous les employes via Telegram.
+          </p>
+          <textarea style="width:100%;min-height:120px;border:1px solid var(--line);border-radius:10px;padding:10px;font:inherit;" placeholder="Message d'alerte..."></textarea>
+          <div class="actions" style="margin-top:10px;">
+            <button class="btn btn-main">Envoyer</button>
+            <button class="btn btn-soft">Programmer</button>
+          </div>
+        </article>
+
+        <article class="card col-12">
+          <h2 style="margin-top:0;">👥 Gestion des équipes</h2>
+          <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;">
+            <div style="flex:1;min-width:220px;">
+              <label style="font-size:12px;color:var(--muted);display:block;margin-bottom:4px;">Nouvelle équipe</label>
+              <input style="width:100%;padding:8px;border:1px solid var(--line);border-radius:8px;font-size:14px;" placeholder="Equipe Alpha" />
+            </div>
+            <button class="btn btn-main">+ Créer équipe</button>
+          </div>
+
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px;">
+            <div>
+              <label style="font-size:12px;color:var(--muted);display:block;margin-bottom:4px;">Equipe</label>
+              <select style="width:100%;padding:8px;border:1px solid var(--line);border-radius:8px;font-size:14px;">
+                <option>Equipe Alpha</option>
+                <option>Equipe Logistique</option>
+              </select>
+              <label style="font-size:12px;color:var(--muted);display:block;margin:10px 0 4px;">Manager 🎯</label>
+              <div class="actions">
+                <select style="flex:1;padding:8px;border:1px solid var(--line);border-radius:8px;font-size:14px;">
+                  <option>— Aucun —</option>
+                  <option selected>Lea Durand</option>
+                  <option>Marie Ben</option>
+                </select>
+                <button class="btn" style="background:#e6d8f7;color:#5a2c9d;border:0;border-radius:10px;font-size:12px;font-weight:700;padding:9px 12px;cursor:pointer;">Affecter</button>
+              </div>
+              <label style="font-size:12px;color:var(--muted);display:block;margin:10px 0 4px;">Ajouter un employé</label>
+              <div class="actions">
+                <select style="flex:1;padding:8px;border:1px solid var(--line);border-radius:8px;font-size:14px;">
+                  <option>Alice Morel</option>
+                  <option>Yanis Paul</option>
+                </select>
+                <button class="btn btn-alt">Ajouter</button>
+              </div>
+            </div>
+            <div>
+              <strong style="display:block;margin-bottom:6px;">Détails de l'équipe</strong>
+              <div style="background:#f0e6ff;border:1px solid #dcc9ff;border-radius:8px;padding:10px;margin-bottom:10px;">
+                <p style="font-size:11px;color:#5a2c9d;font-weight:700;margin:0 0 4px;text-transform:uppercase;">Manager 🎯</p>
+                <p style="font-size:13px;color:#5a2c9d;font-weight:bold;margin:0;">Lea Durand</p>
+              </div>
+              <strong style="display:block;margin-bottom:6px;font-size:12px;">Membres</strong>
+              <div style="display:flex;justify-content:space-between;align-items:center;padding:8px;border:1px solid var(--line);border-radius:8px;margin-bottom:6px;">
+                <span style="font-size:12px;">Alice Morel</span>
+                <button class="btn btn-soft" style="font-size:11px;padding:6px 10px;">Retirer</button>
+              </div>
+              <div style="display:flex;justify-content:space-between;align-items:center;padding:8px;border:1px solid var(--line);border-radius:8px;">
+                <span style="font-size:12px;">Yanis Paul</span>
+                <button class="btn btn-soft" style="font-size:11px;padding:6px 10px;">Retirer</button>
+              </div>
+            </div>
+          </div>
+        </article>
+      </section>
+    </main>
+  </body>
+</html>

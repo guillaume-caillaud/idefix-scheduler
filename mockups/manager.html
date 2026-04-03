@@ -1,0 +1,165 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Mockup Manager</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <div class="topbar-inner">
+        <div class="brand">Team Scheduler - Espace Manager</div>
+        <nav class="nav">
+          <a href="index.html">Accueil</a>
+          <a href="admin.html">Admin</a>
+          <a class="active" href="manager.html">Manager</a>
+          <a href="employee.html">Employe</a>
+        </nav>
+      </div>
+    </header>
+
+    <main class="wrap">
+      <section class="grid">
+        <article class="card col-12" style="display:flex;justify-content:space-between;align-items:flex-end;gap:12px;flex-wrap:wrap;">
+          <div>
+            <h2 style="margin:0 0 4px;">Planning du 01/04/2026</h2>
+            <p style="margin:0;color:var(--muted);">Vue manager avec edition, affectation et alertes</p>
+          </div>
+          <div class="actions">
+            <input type="date" value="2026-04-01" style="padding:8px;border:1px solid var(--line);border-radius:8px;font-size:14px;" />
+            <button class="btn btn-soft">Auj.</button>
+            <button class="btn btn-soft">Dem.</button>
+            <button class="btn btn-main">Planning global</button>
+            <button class="btn btn-soft">Planning equipe</button>
+            <select style="padding:8px;border:1px solid var(--line);border-radius:8px;font-size:13px;">
+              <option>Equipe Alpha</option>
+              <option>Equipe Logistique</option>
+            </select>
+            <button class="btn btn-soft">Toutes</button>
+            <button class="btn btn-soft">Incompletes</button>
+            <button class="btn btn-soft" onclick="window.print()">🖨 Imprimer</button>
+            <button class="btn btn-main">+ Nouvelle tache</button>
+          </div>
+        </article>
+
+        <article class="card col-7">
+          <h3 style="margin-top:0;">Planning complet</h3>
+
+          <div class="task">
+            <div class="task-head">
+              <div>
+                <strong>Support clients</strong>
+                <div class="time">09:00 - 11:00</div>
+              </div>
+              <span class="badge warn">2/3 personnes</span>
+            </div>
+            <p class="task-meta">
+              Affectes: Alice Morel, Yanis Paul
+            </p>
+            <div class="progress"><span style="width:66%"></span></div>
+            <div class="actions task-main-actions">
+              <button class="btn btn-alt">+ Affecter</button>
+              <button class="btn btn-soft">Modifier</button>
+            </div>
+            <div class="actions task-info-toggle">
+              <button class="btn btn-soft">Plus d'information</button>
+            </div>
+          </div>
+
+          <div class="task">
+            <div class="task-head">
+              <div>
+                <strong>Inventaire zone A</strong>
+                <div class="time">10:30 - 12:00</div>
+              </div>
+              <span class="badge ok">2/2 personnes</span>
+            </div>
+            <div class="card task-details">
+              <p>
+                Controle détaillé des références en zone A. Vérifier les ruptures, documenter les anomalies et remonter les blocages au manager avant 11h45.
+              </p>
+            </div>
+            <p class="task-meta">
+              Affectes: Lea Durand, Sami Benali
+            </p>
+            <div class="progress"><span style="width:100%"></span></div>
+            <div class="actions task-main-actions">
+              <button class="btn btn-alt">+ Affecter</button>
+              <button class="btn btn-soft">Modifier</button>
+            </div>
+            <div class="actions task-info-toggle">
+              <button class="btn btn-soft">Masquer les informations</button>
+            </div>
+          </div>
+
+          <div class="task">
+            <div class="task-head">
+              <div>
+                <strong>Reception colis</strong>
+                <div class="time">13:30 - 16:00</div>
+              </div>
+              <span class="badge warn">1/2 personnes</span>
+            </div>
+            <p class="task-meta">
+              Affectes: Nora Karim
+            </p>
+            <div class="progress"><span style="width:50%"></span></div>
+            <div class="actions task-main-actions">
+              <button class="btn btn-alt">+ Affecter</button>
+              <button class="btn btn-soft">Modifier</button>
+            </div>
+            <div class="actions task-info-toggle">
+              <button class="btn btn-soft">Plus d'information</button>
+            </div>
+          </div>
+        </article>
+
+        <article class="card col-5">
+          <h3 style="margin-top:0;">Affecter une tache</h3>
+          <p style="margin:0 0 10px;color:var(--muted);font-size:13px;">Selection rapide d'un utilisateur (employe ou manager).</p>
+          <label style="font-size:12px;color:var(--muted);">Tache</label>
+          <select style="width:100%;margin:4px 0 10px;border:1px solid var(--line);border-radius:9px;padding:9px;">
+            <option>Support clients</option>
+            <option>Reception colis</option>
+          </select>
+          <label style="font-size:12px;color:var(--muted);">Utilisateur</label>
+          <select style="width:100%;margin:4px 0 12px;border:1px solid var(--line);border-radius:9px;padding:9px;">
+            <option>Alice Morel (Employe)</option>
+            <option>Lea Durand (Manager)</option>
+          </select>
+          <button class="btn btn-main" style="width:100%;">Affecter</button>
+
+          <hr style="border:none;border-top:1px solid var(--line);margin:18px 0;" />
+
+          <h3 style="margin:0 0 8px;">Gestion des equipes</h3>
+          <input style="width:100%;margin:0 0 8px;border:1px solid var(--line);border-radius:9px;padding:9px;" placeholder="Nom de la nouvelle equipe" />
+          <button class="btn btn-main" style="width:100%;">+ Creer equipe</button>
+
+          <label style="font-size:12px;color:var(--muted);display:block;margin-top:10px;">Equipe a gerer</label>
+          <select style="width:100%;margin:4px 0 10px;border:1px solid var(--line);border-radius:9px;padding:9px;">
+            <option>Equipe Alpha</option>
+            <option>Equipe Logistique</option>
+          </select>
+          <label style="font-size:12px;color:var(--muted);">Ajouter un employe</label>
+          <div class="actions" style="margin-top:4px;">
+            <select style="flex:1;border:1px solid var(--line);border-radius:9px;padding:9px;">
+              <option>Alice Morel</option>
+              <option>Yanis Paul</option>
+            </select>
+            <button class="btn btn-alt">Ajouter</button>
+          </div>
+
+          <hr style="border:none;border-top:1px solid var(--line);margin:18px 0;" />
+
+          <h3 style="margin:0 0 8px;">Alerte Telegram</h3>
+          <textarea style="width:100%;min-height:110px;border:1px solid var(--line);border-radius:10px;padding:10px;font:inherit;" placeholder="Message manager..."></textarea>
+          <div class="actions" style="margin-top:10px;">
+            <button class="btn btn-main">Envoyer</button>
+            <button class="btn btn-soft">Previsualiser</button>
+          </div>
+        </article>
+      </section>
+    </main>
+  </body>
+</html>

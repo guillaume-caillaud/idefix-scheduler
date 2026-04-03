@@ -1,0 +1,181 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Mockup Employe</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <div class="topbar-inner">
+        <div class="brand">Team Scheduler - Espace Employe</div>
+        <nav class="nav">
+          <a href="index.html">Accueil</a>
+          <a href="admin.html">Admin</a>
+          <a href="manager.html">Manager</a>
+          <a class="active" href="employee.html">Employe</a>
+        </nav>
+      </div>
+    </header>
+
+    <main class="wrap">
+      <section class="grid">
+        <article class="card col-12" style="display:flex;justify-content:space-between;align-items:flex-end;gap:12px;flex-wrap:wrap;">
+          <div>
+            <h2 style="margin:0 0 4px;">Mon planning - 01/04/2026</h2>
+            <p style="margin:0;color:var(--muted);">Conflits mis en evidence + auto affectation aux taches incompletes</p>
+          </div>
+          <div class="actions">
+            <input type="date" value="2026-04-01" style="padding:8px;border:1px solid var(--line);border-radius:8px;font-size:14px;" />
+            <button class="btn btn-soft">Aujourd'hui</button>
+            <button class="btn btn-soft">Demain</button>
+            <button class="btn btn-main">Planning global</button>
+            <button class="btn btn-soft">Planning equipe</button>
+            <select style="padding:8px;border:1px solid var(--line);border-radius:8px;font-size:13px;">
+              <option>Equipe Alpha</option>
+              <option>Equipe Logistique</option>
+            </select>
+            <button class="btn btn-soft" onclick="window.print()">🖨 Imprimer</button>
+          </div>
+        </article>
+
+        <article class="card col-12">
+          <h3 style="margin-top:0;">Taches visibles (global/equipe)</h3>
+          <div class="task">
+            <div class="task-head">
+              <div>
+                <strong>Brief equipe</strong>
+                <div class="time">08:30 - 09:00</div>
+              </div>
+              <span class="badge warn">2/4 personnes</span>
+            </div>
+            <p class="task-meta">
+              Affectes: Alice Morel, Yanis Paul
+            </p>
+            <div class="actions task-info-toggle">
+              <button class="btn btn-soft">Plus d'information</button>
+            </div>
+          </div>
+        </article>
+
+        <article class="card col-6">
+          <h3 style="margin-top:0;">Mes taches assignees</h3>
+
+          <div class="task conflict">
+            <div class="task-head">
+              <div>
+                <strong>Support clients</strong>
+                <div class="time">09:00 - 11:00</div>
+              </div>
+              <span class="badge danger">Conflit</span>
+            </div>
+            <p class="task-meta">
+              Affectes: Alice Morel, Yanis Paul
+            </p>
+            <div class="actions task-main-actions">
+              <button class="btn btn-danger" style="background:#fee;color:#c33;border:1px solid #fcc;">✕ Me retirer</button>
+              <span class="badge employee">Affecte</span>
+            </div>
+            <div class="actions task-info-toggle">
+              <button class="btn btn-soft">Plus d'information</button>
+            </div>
+          </div>
+
+          <div class="task conflict">
+            <div class="task-head">
+              <div>
+                <strong>Inventaire zone A</strong>
+                <div class="time">10:30 - 12:00</div>
+              </div>
+              <span class="badge danger">Conflit</span>
+            </div>
+            <div class="card task-details">
+              <p>
+                Scanner les produits sensibles, vérifier les quantités physiques vs système, noter les écarts et prévenir l'équipe logistique si un article est indisponible.
+              </p>
+            </div>
+            <p class="task-meta">
+              Affectes: Alice Morel, Lea Durand
+            </p>
+            <div class="actions task-main-actions">
+              <button class="btn btn-danger" style="background:#fee;color:#c33;border:1px solid #fcc;">✕ Me retirer</button>
+              <span class="badge employee">Affecte</span>
+            </div>
+            <div class="actions task-info-toggle">
+              <button class="btn btn-soft">Masquer les informations</button>
+            </div>
+          </div>
+
+          <div class="task">
+            <div class="task-head">
+              <div>
+                <strong>Preparation commandes</strong>
+                <div class="time">14:00 - 16:00</div>
+              </div>
+              <span class="badge ok">Sans conflit</span>
+            </div>
+            <p class="task-meta">
+              Affectes: Alice Morel
+            </p>
+            <div class="actions task-main-actions">
+              <button class="btn btn-danger" style="background:#fee;color:#c33;border:1px solid #fcc;">✕ Me retirer</button>
+              <span class="badge employee">Affecte</span>
+            </div>
+            <div class="actions task-info-toggle">
+              <button class="btn btn-soft">Plus d'information</button>
+            </div>
+          </div>
+        </article>
+
+        <article class="card col-6">
+          <h3 style="margin-top:0;">Taches incompletes disponibles</h3>
+
+          <div class="task">
+            <div class="task-head">
+              <div>
+                <strong>Reception colis</strong>
+                <div class="time">13:30 - 16:00</div>
+              </div>
+              <span class="badge warn">1/2 personnes</span>
+            </div>
+            <p class="task-meta">
+              Affectes: Nora Karim
+            </p>
+            <div class="progress"><span style="width:50%"></span></div>
+            <div class="actions task-main-actions"><button class="btn btn-main">+ Me proposer</button></div>
+            <div class="actions task-info-toggle">
+              <button class="btn btn-soft">Plus d'information</button>
+            </div>
+          </div>
+
+          <div class="task">
+            <div class="task-head">
+              <div>
+                <strong>Controle qualite</strong>
+                <div class="time">16:00 - 18:00</div>
+              </div>
+              <span class="badge warn">0/1 personne</span>
+            </div>
+            <p class="task-meta">
+              Affectes: Aucun
+            </p>
+            <div class="progress"><span style="width:0%"></span></div>
+            <div class="actions task-main-actions"><button class="btn btn-main">+ Me proposer</button></div>
+            <div class="actions task-info-toggle">
+              <button class="btn btn-soft">Plus d'information</button>
+            </div>
+          </div>
+
+          <div class="card" style="margin-top:12px;background:#f9fbff;">
+            <strong style="display:block;margin-bottom:6px;">Resume conflits</strong>
+            <p style="margin:0;color:var(--muted);font-size:13px;line-height:1.55;">
+              2 conflits detectes entre 09:00 et 12:00. Recommande: se desaffecter d'une tache ou
+              demander une replanification au manager.
+            </p>
+          </div>
+        </article>
+      </section>
+    </main>
+  </body>
+</html>
