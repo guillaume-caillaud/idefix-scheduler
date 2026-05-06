@@ -38,6 +38,10 @@ def get_user(db: Session, user_id: int):
     return db.get(models.User, user_id)
 
 
+def get_task(db: Session, task_id: int):
+    return db.get(models.Task, task_id)
+
+
 def set_user_role(db: Session, user_id: int, role: models.UserRole):
     user = get_user(db, user_id)
     if not user:
@@ -140,19 +144,13 @@ def list_tasks_for_day_for_team(db: Session, target_date: date, team_id: int):
     day_end = day_start + timedelta(days=1)
     stmt = (
         select(models.Task)
-        .outerjoin(models.TaskAssignment, models.TaskAssignment.task_id == models.Task.id)
-        .outerjoin(models.TeamMember, models.TeamMember.user_id == models.TaskAssignment.assignee_id)
         .where(
             and_(
                 models.Task.start_at < day_end,
                 models.Task.end_at > day_start,
-                or_(
-                    models.Task.team_id == team_id,
-                    models.TeamMember.team_id == team_id,
-                ),
+                models.Task.team_id == team_id,
             )
         )
-        .distinct()
         .order_by(models.Task.start_at.asc())
     )
     return list(db.execute(stmt).scalars().all())
@@ -213,6 +211,23 @@ def get_user_tasks_for_day(db: Session, user_id: int, target_date: date):
     return list(db.execute(stmt).scalars().all())
 
 
+def get_next_user_tasks(db: Session, user_id: int, limit: int = 5):
+    now = datetime.now()
+    stmt = (
+        select(models.Task)
+        .join(models.TaskAssignment, models.TaskAssignment.task_id == models.Task.id)
+        .where(
+            and_(
+                models.TaskAssignment.assignee_id == user_id,
+                models.Task.end_at >= now,
+            )
+        )
+        .order_by(models.Task.start_at.asc())
+        .limit(limit)
+    )
+    return list(db.execute(stmt).scalars().all())
+
+
 def list_unfilled_tasks_for_day(db: Session, target_date: date):
     tasks = list_tasks_for_day(db, target_date)
     counts = get_assignment_count_by_task(db, [t.id for t in tasks])
@@ -253,7 +268,12 @@ def list_teams(db: Session):
 def list_teams_managed_by(db: Session, manager_user_id: int):
     stmt = (
         select(models.Team)
-        .where(models.Team.created_by == manager_user_id)
+        .where(
+            or_(
+                models.Team.created_by == manager_user_id,
+                models.Team.manager_id == manager_user_id,
+            )
+        )
         .order_by(models.Team.name.asc())
     )
     return list(db.execute(stmt).scalars().all())
@@ -261,7 +281,13 @@ def list_teams_managed_by(db: Session, manager_user_id: int):
 
 def is_team_managed_by(db: Session, team_id: int, manager_user_id: int) -> bool:
     stmt = select(models.Team.id).where(
-        and_(models.Team.id == team_id, models.Team.created_by == manager_user_id)
+        and_(
+            models.Team.id == team_id,
+            or_(
+                models.Team.created_by == manager_user_id,
+                models.Team.manager_id == manager_user_id,
+            ),
+        )
     )
     return db.execute(stmt).first() is not None
 
@@ -316,8 +342,44 @@ def get_team_members(db: Session, team_id: int):
     return list(db.execute(stmt).scalars().all())
 
 
+def list_alert_targets_for_manager(db: Session, manager_user_id: int):
+    stmt = (
+        select(models.User)
+        .join(models.TeamMember, models.TeamMember.user_id == models.User.id)
+        .join(models.Team, models.Team.id == models.TeamMember.team_id)
+        .where(
+            and_(
+                or_(
+                    models.Team.created_by == manager_user_id,
+                    models.Team.manager_id == manager_user_id,
+                ),
+                models.User.role.in_([models.UserRole.employee, models.UserRole.manager]),
+            )
+        )
+        .distinct()
+        .order_by(models.User.name.asc())
+    )
+    return list(db.execute(stmt).scalars().all())
+
+
 def get_assignment(db: Session, assignment_id: int):
     return db.get(models.TaskAssignment, assignment_id)
+
+
+def get_assignment_id_for_user_by_tasks(db: Session, user_id: int, task_ids: list[int]) -> dict[int, int]:
+    """Returns {task_id: assignment_id} for the given user."""
+    if not task_ids:
+        return {}
+    stmt = (
+        select(models.TaskAssignment.task_id, models.TaskAssignment.id)
+        .where(
+            and_(
+                models.TaskAssignment.assignee_id == user_id,
+                models.TaskAssignment.task_id.in_(task_ids),
+            )
+        )
+    )
+    return {row.task_id: row.id for row in db.execute(stmt).all()}
 
 
 def delete_assignment(db: Session, assignment_id: int) -> bool:
@@ -325,6 +387,26 @@ def delete_assignment(db: Session, assignment_id: int) -> bool:
     if not assignment:
         return False
     db.delete(assignment)
+    db.commit()
+    return True
+
+
+def delete_task(db: Session, task_id: int) -> bool:
+    """Delete a task and cascade-delete its assignments."""
+    task = db.get(models.Task, task_id)
+    if not task:
+        return False
+    db.delete(task)
+    db.commit()
+    return True
+
+
+def delete_team(db: Session, team_id: int) -> bool:
+    """Delete a team and cascade-delete its members and tasks."""
+    team = db.get(models.Team, team_id)
+    if not team:
+        return False
+    db.delete(team)
     db.commit()
     return True
 

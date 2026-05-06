@@ -1,4 +1,8 @@
 from datetime import UTC, datetime, timedelta
+import base64
+import hashlib
+import hmac
+import os
 
 import jwt
 from fastapi import Depends, HTTPException, status
@@ -11,6 +15,30 @@ from app.database import get_db
 from app.models import User, UserRole
 
 bearer_scheme = HTTPBearer(auto_error=False)
+
+
+def hash_admin_password(password: str, iterations: int = 390_000) -> str:
+    salt = os.urandom(16)
+    derived = hashlib.pbkdf2_hmac("sha256", password.encode("utf-8"), salt, iterations)
+    salt_b64 = base64.b64encode(salt).decode("ascii")
+    derived_b64 = base64.b64encode(derived).decode("ascii")
+    return f"pbkdf2_sha256${iterations}${salt_b64}${derived_b64}"
+
+
+def verify_admin_password(password: str, encoded_hash: str) -> bool:
+    # Expected format: pbkdf2_sha256$<iterations>$<salt_b64>$<derived_key_b64>
+    try:
+        algorithm, iterations_str, salt_b64, expected_b64 = encoded_hash.split("$", 3)
+        if algorithm != "pbkdf2_sha256":
+            return False
+        iterations = int(iterations_str)
+        salt = base64.b64decode(salt_b64.encode("ascii"), validate=True)
+        expected = base64.b64decode(expected_b64.encode("ascii"), validate=True)
+    except (ValueError, TypeError, base64.binascii.Error):
+        return False
+
+    derived = hashlib.pbkdf2_hmac("sha256", password.encode("utf-8"), salt, iterations)
+    return hmac.compare_digest(derived, expected)
 
 
 def create_access_token(subject: str, role: str, token_kind: str = "user") -> str:

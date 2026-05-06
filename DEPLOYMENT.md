@@ -71,8 +71,14 @@ JWT_EXP_MINUTES=720
 
 # ── Administrateur ───────────────────────────────────────────
 ADMIN_USERNAME=admin
-# Choisir un mot de passe fort en production
-ADMIN_PASSWORD=admin123
+# Mot de passe admin hashé (PBKDF2-SHA256), ne jamais stocker en clair
+# Générer avec:
+# python -c "import base64,hashlib,os; p='admin123'.encode(); s=os.urandom(16); i=390000; d=hashlib.pbkdf2_hmac('sha256', p, s, i); print(f'pbkdf2_sha256${i}${base64.b64encode(s).decode()}${base64.b64encode(d).decode()}')"
+ADMIN_PASSWORD_HASH=
+# Anti brute-force sur /auth/admin/login
+ADMIN_LOGIN_MAX_ATTEMPTS=5
+ADMIN_LOGIN_WINDOW_SECONDS=300
+ADMIN_LOGIN_LOCKOUT_SECONDS=900
 
 # ── Bot Telegram ─────────────────────────────────────────────
 # Token fourni par @BotFather (voir section 3)
@@ -101,7 +107,8 @@ CORS_ORIGINS=http://localhost:5173,http://localhost
 |---|---|
 | `DATABASE_URL` | Utiliser un mot de passe PostgreSQL fort |
 | `JWT_SECRET` | Générer une clé aléatoire de 32 octets min. |
-| `ADMIN_PASSWORD` | Mot de passe fort (12+ caractères) |
+| `ADMIN_PASSWORD_HASH` | Stocker uniquement un hash PBKDF2-SHA256 |
+| `ADMIN_LOGIN_*` | Ajuster la protection anti brute-force admin |
 | `WEBHOOK_SECRET` | Générer une clé aléatoire |
 | `CORS_ORIGINS` | Restreindre au domaine de production uniquement |
 
@@ -234,6 +241,8 @@ npm run dev
 ```
 
 Le frontend sera disponible sur `http://localhost:5173`.
+
+URL de connexion administrateur (sans lien depuis l'accueil) : `http://localhost:5173/admin-login`.
 
 ---
 
@@ -383,7 +392,7 @@ curl https://api.telegram.org/bot<TELEGRAM_BOT_TOKEN>/getWebhookInfo
 # 5. Test du login admin
 curl -X POST http://localhost:8000/auth/admin/login \
   -H "Content-Type: application/json" \
-  -d '{"username": "admin", "password": "admin123"}'
+  -d '{"username": "admin", "password": "<mot_de_passe_admin_en_clair>"}'
 # Réponse attendue : {"access_token": "...", "token_type": "bearer"}
 ```
 
@@ -550,14 +559,14 @@ docker compose up -d
 
 ### Un utilisateur reste bloqué en statut `pending`
 
-1. Se connecter à l'interface admin (`/admin` sur le frontend).
+1. Se connecter via la page admin dédiée (`/admin-login` sur le frontend), puis accéder à l'interface admin.
 2. Retrouver l'utilisateur et lui attribuer le rôle `employee` ou `manager`.
 3. Ou via l'API :
    ```bash
    # Obtenir un token admin
    TOKEN=$(curl -s -X POST http://localhost:8000/auth/admin/login \
      -H "Content-Type: application/json" \
-     -d '{"username":"admin","password":"admin123"}' | python -c "import sys,json; print(json.load(sys.stdin)['access_token'])")
+     -d '{"username":"admin","password":"<mot_de_passe_admin_en_clair>"}' | python -c "import sys,json; print(json.load(sys.stdin)['access_token'])")
 
    # Assigner le rôle
    curl -X PATCH http://localhost:8000/auth/admin/users/{USER_ID}/role \

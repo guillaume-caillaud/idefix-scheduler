@@ -20,7 +20,7 @@ export default function Navbar() {
   const label = isAdmin
     ? 'Administrateur'
     : user?.role === 'manager'
-      ? `Manager — ${user.name}`
+      ? `Responsable — ${user.name}`
       : user?.name ?? '';
 
   return (

@@ -16,6 +16,7 @@ interface AuthContextValue {
   pendingBlocked: boolean;
   loginAdmin: (username: string, password: string) => Promise<void>;
   loginTelegram: (payload: Record<string, string | number | undefined>) => Promise<void>;
+  loginTelegramByChallenge: (challengeId: string) => Promise<void>;
   updateMyName: (name: string) => Promise<void>;
   logout: () => void;
 }
@@ -73,12 +74,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setPendingBlocked(false);
   };
 
-  const loginTelegram = async (payload: Record<string, string | number | undefined>) => {
-    const { data } = await api.post<{ access_token: string }>('/auth/telegram/login', payload);
-    localStorage.setItem('token', data.access_token);
+  const applyUserToken = async (accessToken: string) => {
+    localStorage.setItem('token', accessToken);
     localStorage.removeItem('isAdmin');
     localStorage.removeItem('pendingBlocked');
-    setToken(data.access_token);
+    setToken(accessToken);
     setIsAdmin(false);
     setPendingBlocked(false);
     try {
@@ -98,6 +98,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const loginTelegram = async (payload: Record<string, string | number | undefined>) => {
+    const { data } = await api.post<{ access_token: string }>('/auth/telegram/login', payload);
+    await applyUserToken(data.access_token);
+  };
+
+  const loginTelegramByChallenge = async (challengeId: string) => {
+    const { data } = await api.post<{ access_token: string }>(`/auth/telegram/challenge/${challengeId}/exchange`);
+    await applyUserToken(data.access_token);
+  };
+
   const updateMyName = async (name: string) => {
     const { data } = await api.patch<User>('/auth/me', { name });
     setUser(data);
@@ -105,7 +115,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   return (
     <AuthContext.Provider
-      value={{ token, user, isAdmin, pendingBlocked, loginAdmin, loginTelegram, updateMyName, logout }}
+      value={{
+        token,
+        user,
+        isAdmin,
+        pendingBlocked,
+        loginAdmin,
+        loginTelegram,
+        loginTelegramByChallenge,
+        updateMyName,
+        logout,
+      }}
     >
       {children}
     </AuthContext.Provider>

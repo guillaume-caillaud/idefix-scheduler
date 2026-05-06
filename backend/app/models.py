@@ -48,7 +48,7 @@ class Task(Base):
     end_at = Column(DateTime(timezone=False), nullable=False, index=True)
     required_people = Column(Integer, nullable=False, default=1)
     created_by = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
-    team_id = Column(Integer, ForeignKey("teams.id", ondelete="SET NULL"), nullable=True, index=True)
+    team_id = Column(Integer, ForeignKey("teams.id", ondelete="CASCADE"), nullable=True, index=True)
 
     creator = relationship("User", back_populates="created_tasks")
     assignments = relationship("TaskAssignment", back_populates="task", cascade="all,delete")

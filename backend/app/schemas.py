@@ -25,6 +25,12 @@ class TokenResponse(BaseModel):
     token_type: str = "bearer"
 
 
+class TelegramChallengeResponse(BaseModel):
+    challenge_id: str
+    expires_in: int
+    deep_link: Optional[str] = None
+
+
 class AssignRoleRequest(BaseModel):
     role: UserRole
 
@@ -149,6 +155,8 @@ class TaskOut(BaseModel):
     missing_people: int = 0
     is_fully_staffed: bool = False
     assigned_users: List[TaskAssigneeOut] = []
+    team_name: Optional[str] = None
+    my_assignment_id: Optional[int] = None
 
 
 class AssignmentCreate(BaseModel):
@@ -197,7 +205,7 @@ class UnfilledTasksResponse(BaseModel):
 
 class AlertRequest(BaseModel):
     message: str
-    user_ids: Optional[List[int]] = None  # None = diffusion à tous les employés
+    user_ids: Optional[List[int]] = None  # None = diffusion à tous les bénévoles et responsables
 
 
 class SettingIn(BaseModel):

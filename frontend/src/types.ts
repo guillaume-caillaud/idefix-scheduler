@@ -21,6 +21,8 @@ export interface Task {
   missing_people: number;
   is_fully_staffed: boolean;
   assigned_users: TaskAssignee[];
+  team_name?: string | null;
+  my_assignment_id?: number | null;
 }
 
 export interface TaskAssignee {

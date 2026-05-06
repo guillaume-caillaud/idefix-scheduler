@@ -77,11 +77,12 @@ def add_team_members(
     if any(user is None for user in users):
         raise HTTPException(status_code=404, detail="one or more users not found")
 
-    invalid_roles = [user.id for user in users if user and user.role != UserRole.employee]
+    allowed_member_roles = {UserRole.employee, UserRole.manager}
+    invalid_roles = [user.id for user in users if user and user.role not in allowed_member_roles]
     if invalid_roles:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="only employees can be added to teams",
+            detail="only employees or managers can be added to teams",
         )
 
     crud.add_users_to_team(db, team_id, payload.user_ids)
@@ -133,6 +134,20 @@ def set_team_manager(
     
     members = crud.get_team_members(db, team_id)
     return _team_detail(team, members)
+
+
+@router.delete("/{team_id}", status_code=204)
+def delete_team(
+    team_id: int,
+    db: Session = Depends(get_db),
+    _: tuple[str, User | dict] = Depends(require_manager_or_admin),
+):
+    """Admin or team manager can delete a team."""
+    team = crud.get_team(db, team_id)
+    if not team:
+        raise HTTPException(status_code=404, detail="team not found")
+
+    crud.delete_team(db, team_id)
 
 
 def _team_detail(team, members: list[User]) -> schemas.TeamDetailOut:

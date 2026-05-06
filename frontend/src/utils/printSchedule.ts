@@ -26,7 +26,7 @@ export interface PrintScheduleOptions {
   formattedDate: string;  // ex : "2 avril 2026"
   tasks: Task[];
   conflictIds?: Set<number>;
-  subtitle?: string;      // ex : nom de l'employé
+  subtitle?: string;      // ex : nom du bénévole
 }
 
 export function printSchedule(opts: PrintScheduleOptions): void {
@@ -142,7 +142,7 @@ export function printSchedule(opts: PrintScheduleOptions): void {
     <h1>📅 ${title}</h1>
     <div class="meta">
       <span><strong>Date :</strong> ${formattedDate}</span>
-      ${subtitle ? `<span><strong>Employé :</strong> ${subtitle}</span>` : ''}
+      ${subtitle ? `<span><strong>Bénévole :</strong> ${subtitle}</span>` : ''}
       <span><strong>Tâches :</strong> ${tasks.length}</span>
     </div>
   </div>

@@ -81,8 +81,9 @@ def list_tasks(
 
     counts = crud.get_assignment_count_by_task(db, [t.id for t in tasks])
     assignees_by_task = crud.get_assignees_by_task(db, [t.id for t in tasks])
+    teams_by_id = _get_teams_by_id(db, tasks)
     return [
-        enrich_task(task, counts.get(task.id, 0), assignees_by_task.get(task.id, []))
+        enrich_task(task, counts.get(task.id, 0), assignees_by_task.get(task.id, []), teams_by_id)
         for task in tasks
     ]
 
@@ -104,15 +105,44 @@ def unfilled_tasks(
 
     counts = crud.get_assignment_count_by_task(db, [t.id for t in tasks])
     assignees_by_task = crud.get_assignees_by_task(db, [t.id for t in tasks])
+    teams_by_id = _get_teams_by_id(db, tasks)
     enriched = [
-        enrich_task(task, counts.get(task.id, 0), assignees_by_task.get(task.id, []))
+        enrich_task(task, counts.get(task.id, 0), assignees_by_task.get(task.id, []), teams_by_id)
         for task in tasks
     ]
     return schemas.UnfilledTasksResponse(date=date_value, tasks=enriched)
 
 
-def enrich_task(task, assigned_people: int, assignees: list[User]) -> schemas.TaskOut:
+@router.delete("/{task_id}", status_code=204)
+def delete_task(
+    task_id: int,
+    db: Session = Depends(get_db),
+    auth_ctx: tuple[str, User | dict] = Depends(require_manager_or_admin),
+):
+    task = crud.get_task(db, task_id)
+    if not task:
+        raise HTTPException(status_code=404, detail="task not found")
+
+    actor_kind, actor = auth_ctx
+    if actor_kind == "manager" and (task.team_id is None or not crud.is_team_managed_by(db, task.team_id, actor.id)):
+        raise HTTPException(status_code=403, detail="manager can only delete tasks from managed teams")
+
+    crud.delete_task(db, task_id)
+
+
+def _get_teams_by_id(db: Session, tasks) -> dict:
+    team_ids = {t.team_id for t in tasks if t.team_id is not None}
+    if not team_ids:
+        return {}
+    return {team.id: team for team in [crud.get_team(db, tid) for tid in team_ids] if team}
+
+
+def enrich_task(task, assigned_people: int, assignees: list[User], teams_by_id: dict | None = None) -> schemas.TaskOut:
     missing_people = max(task.required_people - assigned_people, 0)
+    team_name = None
+    if task.team_id and teams_by_id:
+        team = teams_by_id.get(task.team_id)
+        team_name = team.name if team else None
     return schemas.TaskOut(
         id=task.id,
         title=task.title,
@@ -129,6 +159,7 @@ def enrich_task(task, assigned_people: int, assignees: list[User]) -> schemas.Ta
             schemas.TaskAssigneeOut(id=user.id, name=user.name, role=user.role)
             for user in assignees
         ],
+        team_name=team_name,
     )
 
 

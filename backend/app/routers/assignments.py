@@ -73,11 +73,13 @@ def my_schedule(
     tasks = crud.get_user_tasks_for_day(db, user.id, date_value)
     counts = crud.get_assignment_count_by_task(db, [t.id for t in tasks])
     assignees_by_task = crud.get_assignees_by_task(db, [t.id for t in tasks])
+    teams_by_id = _get_teams_by_id(db, tasks)
+    my_assignment_ids = crud.get_assignment_id_for_user_by_tasks(db, user.id, [t.id for t in tasks])
     return schemas.DayScheduleResponse(
         user_id=user.id,
         date=date_value,
         tasks=[
-            _enrich_task(task, counts.get(task.id, 0), assignees_by_task.get(task.id, []))
+            _enrich_task(task, counts.get(task.id, 0), assignees_by_task.get(task.id, []), teams_by_id, my_assignment_ids.get(task.id))
             for task in tasks
         ],
     )
@@ -109,11 +111,12 @@ def telegram_schedule(telegram_user_id: str, date_value: date, db: Session = Dep
     tasks = crud.get_user_tasks_for_day(db, user.id, date_value)
     counts = crud.get_assignment_count_by_task(db, [t.id for t in tasks])
     assignees_by_task = crud.get_assignees_by_task(db, [t.id for t in tasks])
+    teams_by_id = _get_teams_by_id(db, tasks)
     return schemas.DayScheduleResponse(
         user_id=user.id,
         date=date_value,
         tasks=[
-            _enrich_task(task, counts.get(task.id, 0), assignees_by_task.get(task.id, []))
+            _enrich_task(task, counts.get(task.id, 0), assignees_by_task.get(task.id, []), teams_by_id)
             for task in tasks
         ],
     )
@@ -148,8 +151,19 @@ def delete_assignment(
     crud.delete_assignment(db, assignment_id)
 
 
-def _enrich_task(task: Task, assigned_people: int, assignees: list[User]) -> schemas.TaskOut:
+def _get_teams_by_id(db: Session, tasks) -> dict:
+    team_ids = {t.team_id for t in tasks if t.team_id is not None}
+    if not team_ids:
+        return {}
+    return {team.id: team for team in [crud.get_team(db, tid) for tid in team_ids] if team}
+
+
+def _enrich_task(task: Task, assigned_people: int, assignees: list[User], teams_by_id: dict | None = None, my_assignment_id: int | None = None) -> schemas.TaskOut:
     missing_people = max(task.required_people - assigned_people, 0)
+    team_name = None
+    if task.team_id and teams_by_id:
+        team = teams_by_id.get(task.team_id)
+        team_name = team.name if team else None
     return schemas.TaskOut(
         id=task.id,
         title=task.title,
@@ -158,6 +172,7 @@ def _enrich_task(task: Task, assigned_people: int, assignees: list[User]) -> sch
         end_at=task.end_at,
         required_people=task.required_people,
         created_by=task.created_by,
+        team_id=task.team_id,
         assigned_people=assigned_people,
         missing_people=missing_people,
         is_fully_staffed=missing_people == 0,
@@ -165,4 +180,6 @@ def _enrich_task(task: Task, assigned_people: int, assignees: list[User]) -> sch
             schemas.TaskAssigneeOut(id=user.id, name=user.name, role=user.role)
             for user in assignees
         ],
+        team_name=team_name,
+        my_assignment_id=my_assignment_id,
     )

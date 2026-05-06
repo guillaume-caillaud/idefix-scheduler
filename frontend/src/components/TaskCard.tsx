@@ -17,6 +17,9 @@ interface Props {
   /** Bouton - Retirer l'affectation (employee self-unassign) */
   onUnassign?: () => void;
   unassigning?: boolean;
+  /** Bouton ✕ Supprimer la tâche (manager) */
+  onDelete?: () => void;
+  deleting?: boolean;
 }
 
 function hhmm(iso: string) {
@@ -33,8 +36,11 @@ export default function TaskCard({
   isAssigned,
   onUnassign,
   unassigning,
+  onDelete,
+  deleting,
 }: Props) {
   const [showLongDescription, setShowLongDescription] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const hasPrimaryActions =
     Boolean(onEdit) ||
     Boolean(onAssign) ||
@@ -81,8 +87,43 @@ export default function TaskCard({
             task.is_fully_staffed ? 'bg-green-100 text-green-700' : 'bg-orange-100 text-orange-700'
           }`}
         >
+          {task.team_name && (
+            <span className="mr-1.5 text-gray-500 font-normal">{task.team_name}</span>
+          )}
           {task.assigned_people}/{task.required_people} pers.
         </span>
+        {onDelete && (
+          showDeleteConfirm ? (
+            <div className="ml-2 flex gap-1 items-center shrink-0">
+              <span className="text-xs text-gray-600">Confirmer?</span>
+              <button
+                onClick={() => {
+                  setShowDeleteConfirm(false);
+                  onDelete();
+                }}
+                disabled={deleting}
+                className="px-2 py-0.5 text-xs bg-red-600 text-white rounded hover:bg-red-700 disabled:opacity-50"
+              >
+                {deleting ? '...' : 'Oui'}
+              </button>
+              <button
+                onClick={() => setShowDeleteConfirm(false)}
+                disabled={deleting}
+                className="px-2 py-0.5 text-xs bg-gray-300 text-gray-700 rounded hover:bg-gray-400 disabled:opacity-50"
+              >
+                Non
+              </button>
+            </div>
+          ) : (
+            <button
+              onClick={() => setShowDeleteConfirm(true)}
+              title={`Supprimer la tâche ${task.title}`}
+              className="ml-2 shrink-0 text-red-600 hover:bg-red-50 rounded p-1 font-bold text-base"
+            >
+              ✕
+            </button>
+          )
+        )}
       </div>
 
       <div className="mb-2">

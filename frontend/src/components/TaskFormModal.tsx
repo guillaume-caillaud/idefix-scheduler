@@ -7,16 +7,18 @@ interface Props {
   task?: Task;
   teams?: Team[];
   defaultTeamId?: number;
+  defaultDate?: string;
   onClose: () => void;
   onSuccess: () => void;
 }
 
-export default function TaskFormModal({ task, teams = [], defaultTeamId, onClose, onSuccess }: Props) {
+export default function TaskFormModal({ task, teams = [], defaultTeamId, defaultDate, onClose, onSuccess }: Props) {
   const today = new Date().toISOString().substring(0, 10);
+  const effectiveDefaultDate = defaultDate ?? today;
 
   const [title, setTitle] = useState(task?.title ?? '');
   const [description, setDescription] = useState(task?.description ?? '');
-  const [date, setDate] = useState(task?.start_at.substring(0, 10) ?? today);
+  const [date, setDate] = useState(task?.start_at.substring(0, 10) ?? effectiveDefaultDate);
   const [startTime, setStartTime] = useState(task?.start_at.substring(11, 16) ?? '09:00');
   const [endTime, setEndTime] = useState(task?.end_at.substring(11, 16) ?? '11:00');
   const [required, setRequired] = useState(task?.required_people ?? 1);

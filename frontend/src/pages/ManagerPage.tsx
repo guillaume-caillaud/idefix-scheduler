@@ -19,7 +19,7 @@ export default function ManagerPage() {
   const [selectedTeamId, setSelectedTeamId] = useState<number | ''>('');
   const [manageTeamId, setManageTeamId] = useState<number | ''>('');
   const [teamName, setTeamName] = useState('');
-  const [selectedEmployeeForTeam, setSelectedEmployeeForTeam] = useState<number | ''>('');
+  const [selectedMemberForTeam, setSelectedMemberForTeam] = useState<number | ''>('');
   const [teamFeedback, setTeamFeedback] = useState<string | null>(null);
   const [editingTask, setEditingTask] = useState<Task | undefined>();
   const [showTaskModal, setShowTaskModal] = useState(false);
@@ -89,7 +89,7 @@ export default function ManagerPage() {
     queryFn: () => api.get<User[]>('/users/assignable').then((r) => r.data),
   });
 
-  const employeeUsers = teamAssignableUsers.filter((u) => u.role === 'employee');
+  const memberCandidates = teamAssignableUsers.filter((u) => u.role === 'employee' || u.role === 'manager');
 
   const assignMutation = useMutation({
     mutationFn: ({ task_id, assignee_id }: { task_id: number; assignee_id: number }) =>
@@ -120,21 +120,28 @@ export default function ManagerPage() {
     mutationFn: ({ teamId, userId }: { teamId: number; userId: number }) =>
       api.post(`/teams/${teamId}/members`, { user_ids: [userId] }),
     onSuccess: () => {
-      setTeamFeedback('✅ Employé ajouté à l\'équipe.');
-      setSelectedEmployeeForTeam('');
+      setTeamFeedback('✅ Membre ajouté à l\'équipe.');
+      setSelectedMemberForTeam('');
       qc.invalidateQueries({ queryKey: ['team-detail', manageTeamId] });
     },
-    onError: () => setTeamFeedback('❌ Impossible d\'ajouter cet employé.'),
+    onError: () => setTeamFeedback('❌ Impossible d\'ajouter ce membre.'),
   });
 
   const removeTeamMemberMutation = useMutation({
     mutationFn: ({ teamId, userId }: { teamId: number; userId: number }) =>
       api.delete(`/teams/${teamId}/members/${userId}`),
     onSuccess: () => {
-      setTeamFeedback('✅ Employé retiré de l\'équipe.');
+      setTeamFeedback('✅ Membre retiré de l\'équipe.');
       qc.invalidateQueries({ queryKey: ['team-detail', manageTeamId] });
     },
-    onError: () => setTeamFeedback('❌ Impossible de retirer cet employé.'),
+    onError: () => setTeamFeedback('❌ Impossible de retirer ce membre.'),
+  });
+
+  const deleteTaskMutation = useMutation({
+    mutationFn: (task_id: number) => api.delete(`/tasks/${task_id}`),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['tasks'] });
+    },
   });
 
   const sendAlert = async () => {
@@ -165,12 +172,26 @@ export default function ManagerPage() {
         </div>
         <div className="flex-1" />
         <div className="flex gap-2 items-center">
+          <button
+            onClick={() => setDate(format(addDays(new Date(date + 'T00:00:00'), -1), 'yyyy-MM-dd'))}
+            className="px-2 py-2 bg-gray-100 text-gray-600 rounded-lg text-sm font-medium hover:bg-gray-200 transition"
+            title="Jour précédent"
+          >
+            ←
+          </button>
           <input
             type="date"
             value={date}
             onChange={(e) => setDate(e.target.value)}
             className="px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-300"
           />
+          <button
+            onClick={() => setDate(format(addDays(new Date(date + 'T00:00:00'), 1), 'yyyy-MM-dd'))}
+            className="px-2 py-2 bg-gray-100 text-gray-600 rounded-lg text-sm font-medium hover:bg-gray-200 transition"
+            title="Jour suivant"
+          >
+            →
+          </button>
           <button
             onClick={() => setDate(format(new Date(), 'yyyy-MM-dd'))}
             className="px-3 py-2 bg-gray-100 text-gray-600 rounded-lg text-sm font-medium hover:bg-gray-200 transition"
@@ -213,6 +234,19 @@ export default function ManagerPage() {
         <div className="text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
           Créez d'abord une équipe pour pouvoir créer des tâches d'équipe.
         </div>
+      )}
+
+      {showTaskModal && (
+        <TaskFormModal
+          task={editingTask}
+          teams={teams}
+          defaultDate={date}
+          onClose={() => setShowTaskModal(false)}
+          onSuccess={() => {
+            qc.invalidateQueries({ queryKey: ['tasks'] });
+            setShowTaskModal(false);
+          }}
+        />
       )}
 
       {/* ── Onglets ── */}
@@ -293,6 +327,8 @@ export default function ManagerPage() {
                 setSelectedUserId('');
                 setAssignError(null);
               }}
+              onDelete={() => deleteTaskMutation.mutate(task.id)}
+              deleting={deleteTaskMutation.isPending}
             />
           ))}
         </div>
@@ -301,6 +337,9 @@ export default function ManagerPage() {
       {/* ── Envoi d'alerte ── */}
       <section className="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
         <h2 className="text-sm font-semibold text-gray-700 mb-3">📢 Envoyer une alerte Telegram</h2>
+        <p className="text-xs text-gray-400 mb-3">
+          L'alerte est envoyée uniquement aux membres de vos équipes.
+        </p>
         {alertFeedback && (
           <p className="mb-2 text-sm text-gray-600">{alertFeedback}</p>
         )}
@@ -360,26 +399,28 @@ export default function ManagerPage() {
 
             <div className="flex gap-2">
               <select
-                value={selectedEmployeeForTeam}
-                onChange={(e) => setSelectedEmployeeForTeam(e.target.value ? Number(e.target.value) : '')}
+                value={selectedMemberForTeam}
+                onChange={(e) => setSelectedMemberForTeam(e.target.value ? Number(e.target.value) : '')}
                 disabled={!manageTeamId}
                 className="flex-1 px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-300"
               >
-                <option value="">Ajouter un employé</option>
-                {employeeUsers.map((employee) => (
-                  <option key={employee.id} value={employee.id}>{employee.name}</option>
+                <option value="">Ajouter un membre (bénévole/responsable)</option>
+                {memberCandidates.map((member) => (
+                  <option key={member.id} value={member.id}>
+                    {member.name} ({member.role === 'manager' ? 'responsable' : 'bénévole'})
+                  </option>
                 ))}
               </select>
               <button
                 onClick={() =>
                   manageTeamId &&
-                  selectedEmployeeForTeam &&
+                  selectedMemberForTeam &&
                   addTeamMemberMutation.mutate({
                     teamId: Number(manageTeamId),
-                    userId: Number(selectedEmployeeForTeam),
+                    userId: Number(selectedMemberForTeam),
                   })
                 }
-                disabled={!manageTeamId || !selectedEmployeeForTeam || addTeamMemberMutation.isPending}
+                disabled={!manageTeamId || !selectedMemberForTeam || addTeamMemberMutation.isPending}
                 className="px-3 py-2 bg-indigo-50 text-indigo-700 rounded-lg text-sm hover:bg-indigo-100 disabled:opacity-50"
               >
                 Ajouter
@@ -392,7 +433,7 @@ export default function ManagerPage() {
             {!manageTeamId ? (
               <p className="text-sm text-gray-400">Sélectionnez une équipe.</p>
             ) : (managedTeamDetail?.members ?? []).length === 0 ? (
-              <p className="text-sm text-gray-400">Aucun employé dans cette équipe.</p>
+              <p className="text-sm text-gray-400">Aucun bénévole dans cette équipe.</p>
             ) : (
               <div className="space-y-2">
                 {managedTeamDetail!.members.map((member) => (
@@ -425,6 +466,7 @@ export default function ManagerPage() {
           task={editingTask}
           teams={teams}
           defaultTeamId={selectedTeamId ? Number(selectedTeamId) : undefined}
+          defaultDate={date}
           onClose={() => {
             setShowTaskModal(false);
             setEditingTask(undefined);
@@ -465,7 +507,7 @@ export default function ManagerPage() {
               <option value="">— Sélectionner un utilisateur —</option>
               {assignableUsers.map((u) => (
                 <option key={u.id} value={u.id}>
-                  {u.name} ({u.role === 'manager' ? 'Manager' : 'Employé'})
+                  {u.name} ({u.role === 'manager' ? 'Responsable' : 'Bénévole'})
                 </option>
               ))}
             </select>

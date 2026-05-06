@@ -1,11 +1,13 @@
-import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
+import { BrowserRouter, Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import LoginPage from './pages/LoginPage';
+import AdminLoginPage from './pages/AdminLoginPage';
 import AdminPage from './pages/AdminPage';
 import ManagerPage from './pages/ManagerPage';
 import EmployeePage from './pages/EmployeePage';
 import ProfilePage from './pages/ProfilePage';
+import TelegramAuthPage from './pages/TelegramAuthPage';
 import Navbar from './components/Navbar';
 
 const queryClient = new QueryClient({
@@ -14,9 +16,23 @@ const queryClient = new QueryClient({
 
 function AppRoutes() {
   const { user, isAdmin, logout, pendingBlocked } = useAuth();
+  const location = useLocation();
 
   // Non authentifié
-  if (!user && !isAdmin) return <LoginPage />;
+  if (!user && !isAdmin) {
+    return (
+      <Routes>
+        <Route path="/" element={<LoginPage />} />
+        <Route path="/admin-login" element={<AdminLoginPage />} />
+        <Route path="/telegram-auth" element={<TelegramAuthPage />} />
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+    );
+  }
+
+  if (location.pathname === '/telegram-auth') {
+    return <TelegramAuthPage />;
+  }
 
   if (pendingBlocked) {
     return (
@@ -43,15 +59,23 @@ function AppRoutes() {
           <div className="text-4xl mb-3">⏳</div>
           <h2 className="text-xl font-bold text-gray-800 mb-2">En attente d'activation</h2>
           <p className="text-gray-500 text-sm mb-6">
-            Ton compte a bien été créé. Un administrateur doit t'attribuer un rôle avant que tu
-            puisses accéder à l'application.
+            Votre compte a bien été créé, mais il doit être validé par un administrateur. Lorsque cela
+            aura été fait, veuillez raffraîchir cette page.
           </p>
-          <button
-            onClick={logout}
-            className="text-sm text-indigo-600 hover:underline"
-          >
-            Se déconnecter
-          </button>
+          <div className="flex gap-2 justify-center">
+            <button
+              onClick={() => window.location.reload()}
+              className="text-sm px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition"
+            >
+              Raffraîchir
+            </button>
+            <button
+              onClick={logout}
+              className="text-sm px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition"
+            >
+              Se déconnecter
+            </button>
+          </div>
         </div>
       </div>
     );

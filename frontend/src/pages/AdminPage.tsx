@@ -6,8 +6,8 @@ import type { Team, TeamDetail, User, UserRole } from '../types';
 
 const ROLE_LABELS: Record<UserRole, string> = {
   pending: 'En attente',
-  employee: 'Employé',
-  manager: 'Manager',
+  employee: 'Bénévole',
+  manager: 'Responsable',
 };
 
 const ROLE_STYLES: Record<UserRole, string> = {
@@ -30,9 +30,10 @@ export default function AdminPage() {
   const [appNameFeedback, setAppNameFeedback] = useState<string | null>(null);
   const [teamName, setTeamName] = useState('');
   const [selectedTeamId, setSelectedTeamId] = useState<number | ''>('');
-  const [selectedEmployeeId, setSelectedEmployeeId] = useState<number | ''>('');
+  const [selectedMemberId, setSelectedMemberId] = useState<number | ''>('');
   const [selectedManagerId, setSelectedManagerId] = useState<number | ''>('');
   const [teamFeedback, setTeamFeedback] = useState<string | null>(null);
+  const [showDeleteTeamConfirm, setShowDeleteTeamConfirm] = useState(false);
 
   // Récupérer le jour par défaut et le nom de l'application au démarrage
   useEffect(() => {
@@ -66,6 +67,11 @@ export default function AdminPage() {
       api
         .get<User[]>('/users', { params: filterRole ? { role: filterRole } : {} })
         .then((r) => r.data),
+  });
+
+  const { data: allUsers = [] } = useQuery({
+    queryKey: ['users', 'all'],
+    queryFn: () => api.get<User[]>('/users').then((r) => r.data),
   });
 
   const { data: teams = [] } = useQuery({
@@ -124,34 +130,44 @@ export default function AdminPage() {
     mutationFn: ({ teamId, userId }: { teamId: number; userId: number }) =>
       api.post(`/teams/${teamId}/members`, { user_ids: [userId] }),
     onSuccess: () => {
-      setTeamFeedback('✅ Employé ajouté à l\'équipe.');
-      setSelectedEmployeeId('');
+      setTeamFeedback('✅ Membre ajouté à l\'équipe.');
+      setSelectedMemberId('');
       qc.invalidateQueries({ queryKey: ['team-detail', selectedTeamId] });
       qc.invalidateQueries({ queryKey: ['teams'] });
     },
-    onError: () => setTeamFeedback('❌ Impossible d\'ajouter cet employé.'),
+    onError: () => setTeamFeedback('❌ Impossible d\'ajouter ce membre.'),
   });
 
   const removeMemberMutation = useMutation({
     mutationFn: ({ teamId, userId }: { teamId: number; userId: number }) =>
       api.delete(`/teams/${teamId}/members/${userId}`),
     onSuccess: () => {
-      setTeamFeedback('✅ Employé retiré de l\'équipe.');
+      setTeamFeedback('✅ Membre retiré de l\'équipe.');
       qc.invalidateQueries({ queryKey: ['team-detail', selectedTeamId] });
       qc.invalidateQueries({ queryKey: ['teams'] });
     },
-    onError: () => setTeamFeedback('❌ Impossible de retirer cet employé.'),
+    onError: () => setTeamFeedback('❌ Impossible de retirer ce membre.'),
   });
 
   const setTeamManagerMutation = useMutation({
     mutationFn: ({ teamId, managerId }: { teamId: number; managerId: number | null }) =>
       api.patch(`/teams/${teamId}/manager`, { manager_id: managerId }),
     onSuccess: () => {
-      setTeamFeedback('✅ Manager de l\'équipe défini.');
+      setTeamFeedback('✅ Responsable de l\'équipe défini.');
       qc.invalidateQueries({ queryKey: ['team-detail', selectedTeamId] });
       qc.invalidateQueries({ queryKey: ['teams'] });
     },
-    onError: () => setTeamFeedback('❌ Impossible de définir le manager.'),
+    onError: () => setTeamFeedback('❌ Impossible de définir le responsable.'),
+  });
+
+  const deleteTeamMutation = useMutation({
+    mutationFn: (teamId: number) => api.delete(`/teams/${teamId}`),
+    onSuccess: () => {
+      setTeamFeedback('✅ Équipe supprimée.');
+      setSelectedTeamId('');
+      qc.invalidateQueries({ queryKey: ['teams'] });
+    },
+    onError: () => setTeamFeedback('❌ Impossible de supprimer l\'équipe.'),
   });
 
   const sendBroadcast = async () => {
@@ -160,7 +176,7 @@ export default function AdminPage() {
     setAlertFeedback(null);
     try {
       await api.post('/alerts', { message: alertMsg });
-      setAlertFeedback('✅ Alerte envoyée à tous les employés.');
+      setAlertFeedback('✅ Alerte envoyée à tous les bénévoles et responsables.');
       setAlertMsg('');
     } catch {
       setAlertFeedback("❌ Erreur lors de l'envoi.");
@@ -170,8 +186,8 @@ export default function AdminPage() {
   };
 
   const filters: FilterRole[] = ['', 'pending', 'employee', 'manager'];
-  const employees = users.filter((u) => u.role === 'employee');
-  const managers = users.filter((u) => u.role === 'manager');
+  const memberCandidates = allUsers.filter((u) => u.role === 'employee' || u.role === 'manager');
+  const managers = allUsers.filter((u) => u.role === 'manager');
 
   return (
     <div className="p-6 max-w-4xl mx-auto space-y-8">
@@ -256,7 +272,7 @@ export default function AdminPage() {
       <section className="bg-white rounded-xl border border-gray-100 shadow-sm p-6">
         <h2 className="text-lg font-bold text-gray-800 mb-3">📅 Jour par défaut pour la planification</h2>
         <p className="text-xs text-gray-400 mb-4">
-          Définissez le jour qui s'affichera par défaut pour tous les employés et managers au chargement de leur planning.
+          Définissez le jour qui s'affichera par défaut pour tous les bénévoles et responsables au chargement de leur planning.
         </p>
         {defaultDayFeedback && (
           <div className="mb-3 p-2 bg-gray-50 border border-gray-200 text-sm rounded-lg text-gray-700">
@@ -344,21 +360,54 @@ export default function AdminPage() {
         <div className="grid md:grid-cols-2 gap-4">
           <div className="space-y-3">
             <label className="text-xs font-medium text-gray-700 block">Equipe</label>
-            <select
-              value={selectedTeamId}
-              onChange={(e) => {
-                setSelectedTeamId(e.target.value ? Number(e.target.value) : '');
-                setSelectedManagerId('');
-              }}
-              className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-300"
-            >
-              <option value="">— Sélectionner une équipe —</option>
-              {teams.map((team) => (
-                <option key={team.id} value={team.id}>{team.name}</option>
-              ))}
-            </select>
+            <div className="flex gap-2 items-end">
+              <select
+                value={selectedTeamId}
+                onChange={(e) => {
+                  setSelectedTeamId(e.target.value ? Number(e.target.value) : '');
+                  setSelectedManagerId('');
+                  setShowDeleteTeamConfirm(false);
+                }}
+                className="flex-1 px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-300"
+              >
+                <option value="">— Sélectionner une équipe —</option>
+                {teams.map((team) => (
+                  <option key={team.id} value={team.id}>{team.name}</option>
+                ))}
+              </select>
+              {selectedTeamId && (
+                showDeleteTeamConfirm ? (
+                  <div className="flex gap-1 items-center shrink-0">
+                    <button
+                      onClick={() => {
+                        setShowDeleteTeamConfirm(false);
+                        deleteTeamMutation.mutate(Number(selectedTeamId));
+                      }}
+                      disabled={deleteTeamMutation.isPending}
+                      className="px-2 py-1 text-xs bg-red-600 text-white rounded hover:bg-red-700 disabled:opacity-50"
+                    >
+                      {deleteTeamMutation.isPending ? '...' : 'Confirmer'}
+                    </button>
+                    <button
+                      onClick={() => setShowDeleteTeamConfirm(false)}
+                      disabled={deleteTeamMutation.isPending}
+                      className="px-2 py-1 text-xs bg-gray-300 text-gray-700 rounded hover:bg-gray-400 disabled:opacity-50"
+                    >
+                      Annuler
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    onClick={() => setShowDeleteTeamConfirm(true)}
+                    className="px-3 py-1.5 bg-red-50 text-red-600 rounded-lg text-sm font-medium hover:bg-red-100 transition shrink-0"
+                  >
+                    Supprimer
+                  </button>
+                )
+              )}
+            </div>
 
-            <label className="text-xs font-medium text-gray-700 block">Manager 🎯</label>
+            <label className="text-xs font-medium text-gray-700 block">Responsable 🎯</label>
             <div className="flex gap-2">
               <select
                 value={selectedManagerId}
@@ -384,26 +433,28 @@ export default function AdminPage() {
               </button>
             </div>
 
-            <label className="text-xs font-medium text-gray-700 block">Ajouter un employé</label>
+            <label className="text-xs font-medium text-gray-700 block">Ajouter un membre (bénévole/responsable)</label>
             <div className="flex gap-2">
               <select
-                value={selectedEmployeeId}
-                onChange={(e) => setSelectedEmployeeId(e.target.value ? Number(e.target.value) : '')}
+                value={selectedMemberId}
+                onChange={(e) => setSelectedMemberId(e.target.value ? Number(e.target.value) : '')}
                 className="flex-1 px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-300"
                 disabled={!selectedTeamId}
               >
                 <option value="">— Sélectionner —</option>
-                {employees.map((employee) => (
-                  <option key={employee.id} value={employee.id}>{employee.name}</option>
+                {memberCandidates.map((member) => (
+                  <option key={member.id} value={member.id}>
+                    {member.name} ({member.role === 'manager' ? 'responsable' : 'bénévole'})
+                  </option>
                 ))}
               </select>
               <button
                 onClick={() =>
                   selectedTeamId &&
-                  selectedEmployeeId &&
-                  addMemberMutation.mutate({ teamId: Number(selectedTeamId), userId: Number(selectedEmployeeId) })
+                  selectedMemberId &&
+                  addMemberMutation.mutate({ teamId: Number(selectedTeamId), userId: Number(selectedMemberId) })
                 }
-                disabled={!selectedTeamId || !selectedEmployeeId || addMemberMutation.isPending}
+                disabled={!selectedTeamId || !selectedMemberId || addMemberMutation.isPending}
                 className="px-3 py-2 bg-indigo-50 text-indigo-700 rounded-lg text-sm font-medium hover:bg-indigo-100 transition disabled:opacity-50"
               >
                 Ajouter
@@ -419,14 +470,14 @@ export default function AdminPage() {
               <div className="space-y-3">
                 {selectedTeam?.manager && (
                   <div className="p-3 bg-purple-50 border border-purple-200 rounded-lg">
-                    <p className="text-xs font-medium text-purple-600 mb-1">Manager 🎯</p>
+                    <p className="text-xs font-medium text-purple-600 mb-1">Responsable 🎯</p>
                     <p className="text-sm text-purple-900 font-semibold">{selectedTeam.manager.name}</p>
                   </div>
                 )}
                 <div>
                   <p className="text-xs font-medium text-gray-700 mb-2">Membres</p>
                   {(selectedTeam?.members ?? []).length === 0 ? (
-                    <div className="text-sm text-gray-400">Aucun employé dans cette équipe.</div>
+                    <div className="text-sm text-gray-400">Aucun bénévole dans cette équipe.</div>
                   ) : (
                     <div className="space-y-2">
                       {selectedTeam!.members.map((member) => (
@@ -457,7 +508,7 @@ export default function AdminPage() {
       <section className="bg-white rounded-xl border border-gray-100 shadow-sm p-6">
         <h2 className="text-lg font-bold text-gray-800 mb-3">📢 Diffuser une alerte Telegram</h2>
         <p className="text-xs text-gray-400 mb-3">
-          Envoie un message à tous les employés via le bot Telegram.
+          Envoie un message à tous les bénévoles et responsables via le bot Telegram.
         </p>
         {alertFeedback && (
           <div className="mb-3 p-2 bg-gray-50 border border-gray-200 text-sm rounded-lg text-gray-700">
